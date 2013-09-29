@@ -4,12 +4,19 @@
  */
 package my.hw2;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import javax.swing.JComponent;
 
 /**
  *
@@ -34,6 +41,11 @@ public class MText extends javax.swing.JFrame {
     private void initComponents() {
 
         jFileChooser1 = new javax.swing.JFileChooser();
+        askSaveDialog = new javax.swing.JDialog();
+        askSaveBtn = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
         jScrollPane2 = new javax.swing.JScrollPane();
@@ -49,29 +61,81 @@ public class MText extends javax.swing.JFrame {
         jMenuItem6 = new javax.swing.JMenuItem();
         jMenuItem7 = new javax.swing.JMenuItem();
 
-        jFileChooser1.setApproveButtonText("");
+        jFileChooser1.setApproveButtonText("Open");
         jFileChooser1.setApproveButtonToolTipText("");
         jFileChooser1.setDialogTitle("Open File");
+        jFileChooser1.setFileFilter(new OnlyTextFilter());
         jFileChooser1.setInheritsPopupMenu(true);
         jFileChooser1.setName("Open File"); // NOI18N
+
+        askSaveDialog.setPreferredSize(new java.awt.Dimension(400, 200));
+
+        askSaveBtn.setText("Save");
+
+        jButton2.setText("Cancel");
+
+        jLabel2.setText("There have been changes to the file since your last save.");
+
+        jLabel3.setText("Would you like to save the file?");
+
+        javax.swing.GroupLayout askSaveDialogLayout = new javax.swing.GroupLayout(askSaveDialog.getContentPane());
+        askSaveDialog.getContentPane().setLayout(askSaveDialogLayout);
+        askSaveDialogLayout.setHorizontalGroup(
+            askSaveDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(askSaveDialogLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(askSaveDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
+                    .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, 330, Short.MAX_VALUE)
+                    .addComponent(jLabel3)
+                    .addGroup(askSaveDialogLayout.createSequentialGroup()
+                        .addComponent(askSaveBtn)
+                        .addGap(89, 89, 89)
+                        .addComponent(jButton2)))
+                .addContainerGap(60, Short.MAX_VALUE))
+        );
+        askSaveDialogLayout.setVerticalGroup(
+            askSaveDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, askSaveDialogLayout.createSequentialGroup()
+                .addGap(31, 31, 31)
+                .addComponent(jLabel2)
+                .addGap(18, 18, 18)
+                .addComponent(jLabel3)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 70, Short.MAX_VALUE)
+                .addGroup(askSaveDialogLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(askSaveBtn)
+                    .addComponent(jButton2))
+                .addGap(30, 30, 30))
+        );
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("MText:New");
 
         jTextArea1.setColumns(20);
         jTextArea1.setRows(5);
+        jTextArea1.setName("New"); // NOI18N
         jTextArea1.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 jTextArea1FocusGained(evt);
+            }
+        });
+        jTextArea1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextArea1KeyTyped(evt);
             }
         });
         jScrollPane1.setViewportView(jTextArea1);
 
         jTextArea2.setColumns(20);
         jTextArea2.setRows(5);
+        jTextArea2.setName("New"); // NOI18N
         jTextArea2.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 jTextArea2FocusGained(evt);
+            }
+        });
+        jTextArea2.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jTextArea2KeyTyped(evt);
             }
         });
         jScrollPane2.setViewportView(jTextArea2);
@@ -107,11 +171,6 @@ public class MText extends javax.swing.JFrame {
 
         exitBtn.setText("Exit");
         exitBtn.setName("exitBtn"); // NOI18N
-        exitBtn.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                exitBtnMouseClicked(evt);
-            }
-        });
         exitBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 exitBtnActionPerformed(evt);
@@ -127,11 +186,6 @@ public class MText extends javax.swing.JFrame {
         jMenu2.add(jMenuItem5);
 
         jMenuItem6.setText("Replace");
-        jMenuItem6.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem6ActionPerformed(evt);
-            }
-        });
         jMenu2.add(jMenuItem6);
 
         jMenuItem7.setText("Replace All");
@@ -165,48 +219,311 @@ public class MText extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void openBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openBtnActionPerformed
+    /**
+     * Breaks down the openBtnActionPerformed method to better structure code.
+     * Does the actual file open procedures
+     */
+    private void open()
+    {
+        jFileChooser1.setDialogTitle("Open File");
         int returnVal = jFileChooser1.showOpenDialog(this);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
+        jFileChooser1.setApproveButtonText("Open");
+        if (returnVal == JFileChooser.APPROVE_OPTION)
+        {
             File file = jFileChooser1.getSelectedFile();
-            try {
-                jTextArea1.read(new FileReader(file.getAbsolutePath()), null);
-            } catch (IOException ex) {
+            if(curTextArea.equals(jTextArea2)&&file.toString().equals(jTextArea1.getName())&&(!isSame1))
+            {
+                curTextArea = jTextArea1;
+                isCurSame = isSame1;
+                
+                ActionEvent askSave = new ActionEvent(this, 0, "That file is already open. Would you like to save it first?");
+                int n = askSaveBtnActionPerformed(askSave);
+                switch (n)
+                {
+                    case JOptionPane.YES_OPTION:
+                        askSave = new ActionEvent(this, 0, "Save the File");
+                        saveBtnActionPerformed(askSave);
+
+                        break;
+                    case JOptionPane.CANCEL_OPTION:
+                        return;
+                    default:
+                        break;
+                }
+                
+                curTextArea = jTextArea2;
+                isCurSame = isSame2;
+            }
+            if(curTextArea.equals(jTextArea1)&&file.toString().equals(jTextArea2.getName())&&(!isSame2))
+            {
+                curTextArea = jTextArea2;
+                isCurSame = isSame2;
+                
+                ActionEvent askSave = new ActionEvent(this, 0, "That file is already open. Would you like to save it first?");
+                int n = askSaveBtnActionPerformed(askSave);
+                switch (n)
+                {
+                    case JOptionPane.YES_OPTION:
+                        askSave = new ActionEvent(this, 0, "Save the File");
+                        saveBtnActionPerformed(askSave);
+
+                        break;
+                    case JOptionPane.CANCEL_OPTION:
+                        return;
+                    default:
+                        break;
+                }
+                
+                curTextArea = jTextArea1;
+                isCurSame = isSame1;
+            }
+            try
+            {
+                curTextArea.read(new FileReader(file.getAbsolutePath()), null);
+            }
+            catch (IOException ex)
+            {
                 System.out.println("There was a problem reading the file" + file.getAbsolutePath());
             }
         }
+        curTextArea.setName(jFileChooser1.getSelectedFile().toString());
+        this.setTitle("MText:" + jFileChooser1.getSelectedFile().toString());
+        boolSet();
+    }
+    
+/**
+ * Action Listener that controls file opening behavior.
+ * Checks to see if the file needs to be saved and calls the open() module
+ * @param evt 
+ */   
+    private void openBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openBtnActionPerformed
+        if(!isCurSame)
+        {
+            ActionEvent askSave = new ActionEvent(this, 0, "Would you Like to Save?");
+            int n = askSaveBtnActionPerformed(askSave);
 
+            switch (n)
+            {
+                case JOptionPane.YES_OPTION:
+                    askSave = new ActionEvent(this, 0, "Save the File");
+                    saveBtnActionPerformed(askSave);
+                    if(!isCurSame)
+                    {
+                        return;
+                    }
+                    break;
+                case JOptionPane.CANCEL_OPTION:
+                    return;
+                default:
+                    break;
+            }
+        }
+        open();
     }//GEN-LAST:event_openBtnActionPerformed
 
-    private void jMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem6ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jMenuItem6ActionPerformed
-
-    private void exitBtnMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_exitBtnMouseClicked
-        // TODO add your handling code here:
-    }//GEN-LAST:event_exitBtnMouseClicked
-
+/**
+ * Swaps the targets of the 'Cur' placeholder variables to support changing focus from one text area to the other
+ * @param evt 
+ */
     private void jTextArea1FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextArea1FocusGained
         curTextArea = jTextArea1;
+        isCurSame = isSame1;
+        this.setTitle("MText:" + jTextArea1.getName());
+        
     }//GEN-LAST:event_jTextArea1FocusGained
 
+/**
+ * ActionEvent that controls all File Saving in the program.
+ * @param evt 
+ */
     private void saveBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveBtnActionPerformed
-        // TODO add your handling code here:
+        jFileChooser1.setDialogTitle("Save File");
+        int returnVal = jFileChooser1.showSaveDialog(this);
+        jFileChooser1.setApproveButtonText("Save");
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            File file = jFileChooser1.getSelectedFile();
+            try(BufferedWriter fileOut = new BufferedWriter(new FileWriter(file.toString())))
+            {
+                curTextArea.write(fileOut);
+            }
+            catch(IOException ex)
+            {
+                System.out.println("There was a problem saving the file");
+            }
+            
+            boolSet();
+ 
+            this.setTitle("MText:" + jFileChooser1.getSelectedFile().toString());
+            curTextArea.setName(jFileChooser1.getSelectedFile().toString());      
+        }
     }//GEN-LAST:event_saveBtnActionPerformed
 
+/**
+ * Exits the program
+ * Also checks for unsaved files
+ * @param evt 
+ */
     private void exitBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitBtnActionPerformed
+        if(!isSame1)
+        {
+            isCurSame = isSame1;
+            curTextArea = jTextArea1;
+            ActionEvent askSave = new ActionEvent(this, 0, "Would You LIke to Save?");
+            int n = askSaveBtnActionPerformed(askSave);
+
+            switch (n)
+            {
+                case JOptionPane.YES_OPTION:
+                    askSave = new ActionEvent(this, 0, "Save the File");
+                    saveBtnActionPerformed(askSave);
+                    if (!isCurSame)
+                    {
+                        return;
+                    }
+                    break;
+                case JOptionPane.CANCEL_OPTION:
+                    return;
+                default:
+                    break;
+            }
+        }
+        if(!isSame2)
+        {
+            isCurSame = isSame2;
+            curTextArea = jTextArea2;
+            ActionEvent askSave = new ActionEvent(this, 0, "Would You LIke to Save?");
+            int n = askSaveBtnActionPerformed(askSave);
+
+            switch (n)
+            {
+                case JOptionPane.YES_OPTION:
+                    askSave = new ActionEvent(this, 0, "Save the File");
+                    saveBtnActionPerformed(askSave);
+                    if (!isCurSame)
+                    {
+                        return;
+                    }
+                    break;
+                case JOptionPane.CANCEL_OPTION:
+                    return;
+                default:
+                    break;
+            }
+        }
         System.exit(0);
     }//GEN-LAST:event_exitBtnActionPerformed
 
+/**
+ * Swaps the targets of the 'Cur' placeholder variables to support changing focus from one text area to the other
+ * @param evt 
+ */
     private void jTextArea2FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jTextArea2FocusGained
         curTextArea = jTextArea2;
+        isCurSame = isSame2;
+        this.setTitle("MText:" + jTextArea2.getName());
+
     }//GEN-LAST:event_jTextArea2FocusGained
 
+/**
+ * ActionEvent that controls the creation of new files.
+ * Asks to save files before creating new file.
+ * @param evt 
+ */
     private void newBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newBtnActionPerformed
-        curTextArea.setText("");
+        if(isCurSame&&curTextArea.getName().toString().equals("New"))
+        {
+            return;
+        }
         
+        if(isCurSame)
+        {
+            Object[] options = {"Yes", "No"};
+            int n = JOptionPane.showOptionDialog(rootPane, evt.getActionCommand(), "Are you sure you want to start a new file?", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[1]);
+            if(n==JOptionPane.YES_OPTION)
+            {
+                curTextArea.setText("");
+                this.setTitle("MText:New");
+            }
+        }
+        else
+        {
+            ActionEvent askSave = new ActionEvent(this, 0, "Would You LIke to Save?");
+            int n = askSaveBtnActionPerformed(askSave);
+            
+            switch(n)
+            {
+                case JOptionPane.YES_OPTION:
+                        askSave = new ActionEvent(this, 0, "Save the File");
+                        saveBtnActionPerformed(askSave);
+                        if(isCurSame)
+                        {
+                            curTextArea.setText("");
+                            this.setTitle("MText:New");
+                            curTextArea.setName("New");
+                        }
+                    break;
+                case JOptionPane.NO_OPTION:
+                        boolSet();
+                        curTextArea.setText("");
+                        this.setTitle("MText:New");
+                        curTextArea.setName("New");
+                    break;
+                default:
+                    break;       
+            }
+        }
     }//GEN-LAST:event_newBtnActionPerformed
 
+/**
+ * A typed key while jTextArea1 is in focus will change it's related isSame property
+ * @param evt 
+ */
+    private void jTextArea1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextArea1KeyTyped
+        isSame1 = false;
+        isCurSame = false;
+    }//GEN-LAST:event_jTextArea1KeyTyped
+
+/**
+ * A typed key while jTextArea2 is in focus will change it's related isSame property
+ * @param evt 
+ */
+    private void jTextArea2KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextArea2KeyTyped
+        isSame2 = false;
+        isCurSame = false;
+    }//GEN-LAST:event_jTextArea2KeyTyped
+
+    
+/**
+ * This Method provides verification before opening a save file dialog box. Ask the user if they want to save or not.
+ * @param evt
+ * @return jOptionPane.YES_OPTION if user clicks yes
+ *         jOptionPane.NO_OPTION if the user clicks no
+ *         jOptionPane.CANCEL_OPTION if the user clicks cancel
+ */
+    private int askSaveBtnActionPerformed(java.awt.event.ActionEvent evt)
+    {                                           
+        Object[] options = {"Yes", "No", "Cancel"};
+        int n = JOptionPane.showOptionDialog(rootPane, evt.getActionCommand(), "Save File?", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[2]);
+
+        return n;
+    }
+/**
+ * boolSet separates a section of much used code to allow for better code reuse
+ * generally called when a text area state has changed, this will set all variables governing change to unchanged
+ */
+    private void boolSet()
+    {
+        if(jTextArea1.equals(curTextArea))
+        {
+            isSame1 = true;
+        }
+        if(jTextArea2.equals(curTextArea))
+        {
+            isSame2 = true;
+        }
+        isCurSame = true;
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -241,23 +558,37 @@ public class MText extends javax.swing.JFrame {
             }
         });
     }
-    /*    class onlyTextFilter extends javax.swing.filechooser.FileFilter {
-     @Override
-     public boolean accept(File file) {
-     // Allow only directories, or files with ".txt" extension
-     return file.isDirectory() || file.getAbsolutePath().endsWith(".txt") || file.getAbsolutePath().endsWith(".text");
-     }
-     @Override
-     public String getDescription() {
-     // This description will be displayed in the dialog,
-     // hard-coded = ugly, should be done via I18N
-     return "Text documents (*.txt, *.text)";
-     }
-     } */
+    
+/**
+ * OnlyTextFilter provides a filter to be used in the open and save dialog boxes that will only display file results with a file extension
+ * of .txt or .text
+ */
+    class OnlyTextFilter extends javax.swing.filechooser.FileFilter
+    {
+        @Override
+        public boolean accept(File file)
+        {
+            // Allow only directories, or files with ".txt" or ".text" extensions
+            return file.isDirectory() || file.getAbsolutePath().endsWith(".txt") || file.getAbsolutePath().endsWith(".text");
+        }
+        
+        @Override
+        public String getDescription()
+        {
+            // This description will be displayed in the dialog,
+            // hard-coded = ugly, should be done via I18N
+            return "Text documents (*.txt, *.text)";
+        }
+    }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton askSaveBtn;
+    private javax.swing.JDialog askSaveDialog;
     private javax.swing.JMenuItem exitBtn;
+    private javax.swing.JButton jButton2;
     private javax.swing.JFileChooser jFileChooser1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
@@ -274,6 +605,22 @@ public class MText extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
     // Extra declarations - because netbeans...
-    private javax.swing.JTextArea curTextArea = jTextArea1;
-
+    /**
+     * curTextArea instantiates a JTextArea object to watch the currently selected text area
+     */
+    private javax.swing.JTextArea curTextArea = jTextArea1;    
+    /**
+     * isSame1 turns false when changes have been made to 'jTextArea1'
+     */
+    private boolean isSame1 = true;
+    /**
+     * isSame2 turns false when changes have been made to 'jTextArea2'
+     */
+    private boolean isSame2 = true;
+    /**
+     * isCurSame keeps track if the currently selected text area has been modified or not
+     */
+    private boolean isCurSame = true;
+    
+    
 }
